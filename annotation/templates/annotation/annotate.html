@@ -1,0 +1,188 @@
+{% extends 'annotation/base.html' %}
+{% block content %}
+    <p>
+        Select one of these tools to proceed
+    </p>
+    <div class="m-2">
+        <button id="bbox-tool">Bounding Box</button>
+    </div>
+    <div class="container mx-auto px-4 py-8">
+        <div class="grid grid-cols-3 gap-4">
+            <!-- Image Display -->
+            <div id="canvas-container">
+                <canvas id="annotation-canvas" class="border rounded shadow-md"></canvas>
+            </div>
+
+            <!-- Annotation Tools -->
+            <div class="bg-white shadow-lg rounded-lg p-4">
+                <h2 class="text-xl font-bold mb-4">Annotation Tools</h2>
+
+                <!-- Tool Selection -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700">Annotation Type</label>
+                    <select id="annotation_type" name="annotation_type"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                            required>
+                        {% for type_code, type_name in annotation_types %}
+                            <option value="{{ type_code }}">{{ type_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Classifications -->
+                <div class="mb-4">
+                    <h3 class="text-lg font-medium mb-2">Classifications</h3>
+                    <div id="classifications">
+                        <!-- Classification inputs will be added dynamically -->
+                    </div>
+                    <div class="mt-2">
+                        <button onclick="addClassification()"
+                                class="mt-2 bg-blue-500 hover:bg-blue-700 font-bold py-1 px-3 rounded text-sm">
+                            Add Classification
+                        </button>
+                    </div>
+                    <div class="mt-2">
+                        <button onclick="submitAnnotation()"
+                                class="w-full bg-green-500 hover:bg-green-700 font-bold py-2 px-4 rounded">
+                            Save Annotation
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        let annotations = [];
+        let canvas;
+
+        function addClassification() {
+            const classificationContainer = document.getElementById('classifications');
+            const classificationInputGroup = document.createElement('div');
+            classificationInputGroup.className = 'classification-group mb-2';
+
+            // Classification name input
+            const nameInput = document.createElement('input');
+            nameInput.type = 'text';
+            nameInput.placeholder = 'Classification name';
+            nameInput.className = 'form-control mb-1';
+
+            // Classification type dropdown
+            const typeInput = document.createElement('select');
+            typeInput.className = 'form-control mb-1';
+            ['text', 'checkbox', 'radio'].forEach(type => {
+                const option = document.createElement('option');
+                option.value = type;
+                option.textContent = type;
+                typeInput.appendChild(option);
+            });
+
+            // Classification value input
+            const valueInput = document.createElement('input');
+            valueInput.type = 'text';
+            valueInput.placeholder = 'Classification value';
+            valueInput.className = 'form-control';
+
+            classificationInputGroup.appendChild(nameInput);
+            classificationInputGroup.appendChild(typeInput);
+            classificationInputGroup.appendChild(valueInput);
+            classificationContainer.appendChild(classificationInputGroup);
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            canvas = new fabric.Canvas('annotation-canvas');
+            const image = new Image();
+            image.src = '{{ task.image_url }}';
+
+            image.onload = function () {
+                const fabricImage = new fabric.Image(image);
+                canvas.setBackgroundImage(fabricImage, canvas.renderAll.bind(canvas), {
+                    scaleX: canvas.width / fabricImage.width,
+                    scaleY: canvas.height / fabricImage.height
+                });
+            };
+
+            // Bounding Box Tool
+            document.getElementById('bbox-tool').addEventListener('click', () => {
+                canvas.isDrawingMode = false;
+                let isDrawing = false;
+                let rect;
+
+                canvas.on('mouse:down', function (options) {
+                    isDrawing = true;
+                    const pointer = canvas.getPointer(options.e);
+                    rect = new fabric.Rect({
+                        left: pointer.x,
+                        top: pointer.y,
+                        width: 0,
+                        height: 0,
+                        fill: 'rgba(0, 0, 255, 0.3)',
+                        stroke: 'blue',
+                        strokeWidth: 2
+                    });
+                    canvas.add(rect);
+                });
+
+                canvas.on('mouse:move', function (options) {
+                    if (!isDrawing) return;
+                    const pointer = canvas.getPointer(options.e);
+                    rect.set({
+                        width: pointer.x - rect.left,
+                        height: pointer.y - rect.top
+                    });
+                    canvas.renderAll();
+                });
+
+                canvas.on('mouse:up', function () {
+                    isDrawing = false;
+                    annotations.push({
+                        left: rect.left,
+                        top: rect.top,
+                        width: rect.width,
+                        height: rect.height
+                    });
+                });
+            });
+        });
+
+        function submitAnnotation() {
+            const annotationType = document.getElementById('annotation_type').value;
+            const classifications = Array.from(
+                document.querySelectorAll('.classification-group')
+            ).map(group => ({
+                name: group.querySelector('input:nth-child(1)').value,
+                type: group.querySelector('select').value,
+                value: group.querySelector('input:nth-child(3)').value
+            }));
+
+            const payload = {
+                annotation_type: annotationType,
+                annotations: {
+                    name: 'bounding_box',
+                    data: annotations
+                },
+                classification: classifications
+            };
+
+            fetch(window.location.href, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert('Annotation saved successfully!');
+                    } else {
+                        alert(`Error: ${data.message}`);
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+{% endblock %}
