@@ -1,0 +1,36 @@
+{% extends 'annotation/base.html' %}
+
+{% block content %}
+<div class="container">
+    <h1>Tasks for {{ project.name }}</h1>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Global Key</th>
+                <th>Status</th>
+                <th>Annotated By</th>
+                <th>Annotated At</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for task in tasks %}
+            <tr>
+                <td><a href="{% url 'task_detail' task.id %}">{{ task.global_key }}</a></td>
+                <td>{{ task.get_status_display }}</td>
+                <td>{{ task.annotated_by }}</td>
+                <td>{{ task.annotated_at|date:'Y-m-d H:i:s' }}</td>
+                <td>
+                    <a href="{% url 'task_detail' task.id %}" class="btn btn-primary btn-sm">View</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5">No tasks available for this project.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
