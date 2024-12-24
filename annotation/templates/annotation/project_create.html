@@ -1,0 +1,27 @@
+{% extends 'annotation/base.html' %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Create New Annotation Project</h1>
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            {{ form.name.label_tag }}
+            {{ form.name }}
+        </div>
+        <div class="mb-3">
+            {{ form.description.label_tag }}
+            {{ form.description }}
+        </div>
+        <div class="mb-3">
+            {{ form.media_type.label_tag }}
+            {{ form.media_type }}
+        </div>
+        <div class="mb-3">
+            <label for="image_urls" class="form-label">Image URLs (one per line):</label>
+            <textarea name="image_urls" id="image_urls" rows="5" class="form-control"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Create Project</button>
+    </form>
+</div>
+{% endblock %}
