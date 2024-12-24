@@ -1,18 +1,19 @@
 # Labelbox Web Application
 
 ## Overview
-A web-based annotation platform built with Django and MongoDB for collaborative image labeling.
+A web-based annotation platform built with Django and LabelBox for collaborative image labeling.
 
 ## Features
 - Create annotation projects
 - Upload and annotate images
-- Store annotations directly in MongoDB
+- Store annotations directly in Postgres
 - Web-based annotation interface
 
 ## Prerequisites
 - Python 3.9+
-- MongoDB
+- PostgreSQL
 - pip
+- labelbox==6.4.0
 
 ## Installation
 
@@ -32,14 +33,18 @@ pip install -r requirements.txt
 Create a `.env` file with:
 ```
 DJANGO_SECRET_KEY=your_secret_key
-MONGODB_NAME=labelbox_db
-MONGODB_HOST=localhost
-MONGODB_PORT=27017
+LABELBOX_API_KEY=key
+DB_NAME=labelbox
+DB_USER=postgres
+DB_PASSWORD=Password
+DB_HOST=localhost
+DEBUG_MODE=False
+PRETORIAL_PASS=pass
+PRETORIAL_USER=user
 ```
 
 5. Run migrations
 ```bash
-python manage.py makemigrations
 python manage.py migrate
 ```
 
@@ -53,9 +58,17 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
+## Usage
+- Create a project
+- View pending tasks
+- Add annotations
+- Use the "Bounding Box" button to draw boxes on the canvas. 
+- Add classification fields dynamically as needed. 
+- Save your annotations using the "Save Annotation" button.
+
 ## Deployment Considerations
 - Use gunicorn/uwsgi for production
-- Configure MongoDB connection for production environment
+- Configure Postgresql connection for production environment
 - Use environment-specific settings
 
 ## Security Notes
